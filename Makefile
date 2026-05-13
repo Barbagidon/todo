@@ -4,6 +4,9 @@ export
 PROJECT_ROOT := $(shell pwd)
 export PROJECT_ROOT
 
+MIGRATE_DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable
+MIGRATE_CMD := docker compose run --rm todoapp-postgres-migrate -path=/migrations -database "$(MIGRATE_DB_URL)"
+
 .PHONY: \
 	postgres-up \
 	postgres-stop \
@@ -11,7 +14,10 @@ export PROJECT_ROOT
 	postgres-logs \
 	postgres-ps \
 	compose-down \
-	postgres-clean
+	postgres-clean \
+	migrate-create \
+	migrate-up \
+	migrate-down
 
 postgres-up:
 	docker compose up -d todoapp-postgres
@@ -40,3 +46,17 @@ postgres-clean:
 	else \
 		echo "Cancelled"; \
 	fi
+
+migrate-create:
+	@test -n "$(name)" || (echo "Error: variable 'name' is not set. Usage: make migrate-create name=create_users_table" && exit 1)
+	docker compose run --rm todoapp-postgres-migrate \
+		create \
+		-ext sql \
+		-dir /migrations \
+		-seq "$(name)"
+
+migrate-up:
+	$(MIGRATE_CMD) up
+
+migrate-down:
+	$(MIGRATE_CMD) down $(or $(steps),1)
