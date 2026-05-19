@@ -9,6 +9,8 @@ MIGRATE_CMD := docker compose run --rm todoapp-postgres-migrate -path=/migration
 
 .PHONY: \
 	postgres-up \
+	postgres-forward-up \
+	postgres-forward-stop \
 	postgres-stop \
 	postgres-restart \
 	postgres-logs \
@@ -21,6 +23,12 @@ MIGRATE_CMD := docker compose run --rm todoapp-postgres-migrate -path=/migration
 
 postgres-up:
 	docker compose up -d todoapp-postgres
+
+postgres-forward-up:
+	docker compose up -d todoapp-postgres port-forwarder
+
+postgres-forward-stop:
+	docker compose stop port-forwarder
 
 postgres-stop:
 	docker compose stop todoapp-postgres
