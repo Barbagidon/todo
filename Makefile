@@ -17,6 +17,7 @@ MIGRATE_CMD := docker compose run --rm todoapp-postgres-migrate -path=/migration
 	postgres-ps \
 	compose-down \
 	postgres-clean \
+	app-run \
 	migrate-create \
 	migrate-up \
 	migrate-down
@@ -54,6 +55,9 @@ postgres-clean:
 	else \
 		echo "Cancelled"; \
 	fi
+
+app-run:
+	go run ./cmd/todoapp/main.go
 
 migrate-create:
 	@test -n "$(name)" || (echo "Error: variable 'name' is not set. Usage: make migrate-create name=create_users_table" && exit 1)
