@@ -41,3 +41,12 @@ func (s *TaskService) CompleteTask(index int) error {
 	return s.repo.Complete(index)
 
 }
+
+func (s *TaskService) DeleteTask(index int) error {
+	tasks := s.repo.GetAll()
+	if index < 0 || index >= len(tasks) {
+		return errors.New("неверный номер задачи")
+	}
+
+	return s.repo.Delete(index)
+}

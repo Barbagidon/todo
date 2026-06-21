@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"todoapp/internal/core/domain"
 )
@@ -39,11 +40,19 @@ func (r *TaskRepository) GetAll() []domain.Task {
 }
 
 func (r *TaskRepository) Complete(index int) error {
-	if index >= 0 && index < len(r.tasks) {
+	if checkIsCorrectIndex(index, r.tasks) {
 		r.tasks[index].IsDone = true
 		return r.saveToFile()
 	}
 	return nil
+}
+
+func (r *TaskRepository) Delete(index int) error {
+	if checkIsCorrectIndex(index, r.tasks) {
+		r.tasks = append(r.tasks[:index], r.tasks[index+1:]...)
+		return r.saveToFile()
+	}
+	return errors.New("неверный индекс для удаления")
 }
 
 func (r *TaskRepository) saveToFile() error {
@@ -61,4 +70,8 @@ func (r *TaskRepository) saveToFile() error {
 	}
 
 	return nil
+}
+
+func checkIsCorrectIndex(index int, tasks []domain.Task) bool {
+	return index >= 0 && index < len(tasks)
 }

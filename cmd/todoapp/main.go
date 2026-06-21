@@ -11,7 +11,7 @@ func main() {
 	taskService := service.NewTaskService(repo)
 
 	for {
-		fmt.Println("\n1. Показать задачи\n2. Добавить задачу\n3. Выполнить задачу\n4. Выйти")
+		fmt.Println("\n1. Показать задачи\n2. Добавить задачу\n3. Выполнить задачу\n4. Удалить задачу\n5. Выйти")
 
 		var choice int
 		fmt.Scan(&choice)
@@ -50,6 +50,18 @@ func main() {
 				fmt.Println("🎉 Задача выполнена!")
 			}
 		case 4:
+			var id int
+			fmt.Println("Введите номер задачи:")
+			fmt.Scan(&id)
+
+			err := taskService.DeleteTask(id)
+			if err != nil {
+				fmt.Println("❌ Ошибка:", err)
+			} else {
+				fmt.Println("🎉 Задача удалена!")
+			}
+
+		case 5:
 			fmt.Println("Пока!")
 			return
 		default:
