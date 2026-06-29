@@ -1,77 +1,65 @@
 package repository
 
 import (
-	"encoding/json"
-	"errors"
-	"os"
+	"context"
 	"todoapp/internal/core/domain"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TaskRepository struct {
-	tasks    []domain.Task
-	filePath string
+	db *pgxpool.Pool
 }
 
-func NewTaskRepository(path string) *TaskRepository {
-
-	repo := &TaskRepository{
-		tasks:    make([]domain.Task, 0, 10),
-		filePath: path,
+func NewTaskRepository(db *pgxpool.Pool) *TaskRepository {
+	return &TaskRepository{
+		db: db,
 	}
-
-	data, err := os.ReadFile(path)
-
-	if err != nil {
-		return repo
-	}
-
-	json.Unmarshal(data, &repo.tasks)
-
-	return repo
 }
 
 func (r *TaskRepository) Add(t domain.Task) error {
-	r.tasks = append(r.tasks, t)
-	return r.saveToFile()
+	query := `INSERT INTO tasks (title, completed) VALUES ($1, $2);`
+
+	_, err := r.db.Exec(context.Background(), query, t.Title, t.IsDone)
+
+	return err
 }
 
-func (r *TaskRepository) GetAll() []domain.Task {
-	return r.tasks
-}
+func (r *TaskRepository) GetAll() ([]domain.Task, error) {
+	query := `SELECT id, title, completed FROM tasks ORDER BY id;`
 
-func (r *TaskRepository) Complete(index int) error {
-	if checkIsCorrectIndex(index, r.tasks) {
-		r.tasks[index].IsDone = true
-		return r.saveToFile()
-	}
-	return nil
-}
-
-func (r *TaskRepository) Delete(index int) error {
-	if checkIsCorrectIndex(index, r.tasks) {
-		r.tasks = append(r.tasks[:index], r.tasks[index+1:]...)
-		return r.saveToFile()
-	}
-	return errors.New("неверный индекс для удаления")
-}
-
-func (r *TaskRepository) saveToFile() error {
-	// 1. Превращаем слайс r.tasks в байты JSON
-	data, err := json.Marshal(r.tasks)
+	rows, err := r.db.Query(context.Background(), query)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []domain.Task
+
+	for rows.Next() {
+		var task domain.Task
+
+		err := rows.Scan(&task.ID, &task.Title, &task.IsDone)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, task)
 	}
 
-	// 2. Записываем эти байты в файл
-	// Функция os.WriteFile принимает: (путь_к_файлу, данные_в_байтах, права_доступа)
-	err = os.WriteFile(r.filePath, data, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tasks, nil
 }
 
-func checkIsCorrectIndex(index int, tasks []domain.Task) bool {
-	return index >= 0 && index < len(tasks)
+func (r *TaskRepository) Complete(id int64) error {
+	query := `UPDATE tasks SET completed = true WHERE id = $1;`
+
+	_, err := r.db.Exec(context.Background(), query, id)
+	return err
+}
+
+func (r *TaskRepository) Delete(id int64) error {
+	query := `DELETE FROM tasks WHERE id = $1;`
+
+	_, err := r.db.Exec(context.Background(), query, id)
+	return err
 }

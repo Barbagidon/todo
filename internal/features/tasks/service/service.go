@@ -28,25 +28,21 @@ func (s *TaskService) CreateTask(title string) error {
 
 }
 
-func (s *TaskService) GetTasks() []domain.Task {
-	return s.repo.GetAll()
-}
+func (s *TaskService) GetTasks() ([]domain.Task, error) {
+	tasks, err := s.repo.GetAll()
 
-func (s *TaskService) CompleteTask(index int) error {
-	tasks := s.repo.GetAll()
-	if index < 0 || index >= len(tasks) {
-		return errors.New("неверный номер задачи")
+	if err != nil {
+		return nil, err
 	}
 
-	return s.repo.Complete(index)
-
+	return tasks, nil
 }
 
-func (s *TaskService) DeleteTask(index int) error {
-	tasks := s.repo.GetAll()
-	if index < 0 || index >= len(tasks) {
-		return errors.New("неверный номер задачи")
-	}
+func (s *TaskService) CompleteTask(id int64) error {
 
-	return s.repo.Delete(index)
+	return s.repo.Complete(id)
+}
+
+func (s *TaskService) DeleteTask(id int64) error {
+	return s.repo.Delete(id)
 }
